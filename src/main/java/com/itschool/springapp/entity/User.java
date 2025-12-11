@@ -2,6 +2,8 @@ package com.itschool.springapp.entity;
 
 import jakarta.persistence.*;
 
+import java.util.List;
+
 @Entity // Annotation to tell JPA/Hibernate that this class is an entity and should be persisted in the database
 @Table(name = "users") // table name in the database. If we don't specify it, the table name will be the same as the Entity name. If not specified, the Entity name defaults to class name
 public class User {
@@ -13,15 +15,29 @@ public class User {
     private String email;
     private Integer age;
 
+    // this will create a new column foreign key in "users" table, named "address_id" referencing the table "addresses"
+    // holds the relationship between a User and an Address
+    @OneToOne(cascade = CascadeType.ALL) // CascadeType.ALL will propagate all operations (CRUD) to the related entity (table). This means that if we delete a User, the related Address will also be deleted. If we update a User, the related Address will also be updated.
+    private Address address;
+
+    // mappedBy is used to specify the field name in the Order class that owns the relationship in the "orders" table
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Order> orders;
+
+    @Transient // marks the field as transient (non-serializable), meaning it will NOT be persisted in the database (can be used for various business logic, etc.). Usually not needed. Also, not needed in our case, put here only for demo purposes
+    private String ignoredByDb;
+
     protected User() {
         // Hibernate needs a non-arg constructor (at least protected), otherwise it will fail
     }
 
     // helper constructor used for business logic in the service layer
-    public User(String name, String email, Integer age) {
+    public User(String name, String email, Integer age, Address address, List<Order> orders) {
         this.name = name;
         this.email = email;
         this.age = age;
+        this.address = address;
+        this.orders = orders;
     }
 
     // getters and setters for all fields needed for Hibernate to work properly
@@ -56,5 +72,29 @@ public class User {
 
     public void setAge(Integer age) {
         this.age = age;
+    }
+
+    public Address getAddress() {
+        return address;
+    }
+
+    public void setAddress(Address address) {
+        this.address = address;
+    }
+
+    public List<Order> getOrders() {
+        return orders;
+    }
+
+    public void setOrders(List<Order> orders) {
+        this.orders = orders;
+    }
+
+    public String getIgnoredByDb() {
+        return ignoredByDb;
+    }
+
+    public void setIgnoredByDb(String ignoredByDb) {
+        this.ignoredByDb = ignoredByDb;
     }
 }
