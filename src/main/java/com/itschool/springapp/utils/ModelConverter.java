@@ -48,7 +48,7 @@ public class ModelConverter {
         // but everything in nested functional style
         List<Order> orderEntities = Optional.ofNullable(orderDTOs) // potentially null 'orderDTOs' list - if 'orderDTOs' is null jump directly to 'orElse'; if not null, below map is executed
                 .map(orders -> orders.stream() // if the Optional is present ('orderDTOs' list not null) map the list to something else using stream
-                        .map(ModelConverter::toOrderEntity) // map each Order element from the above stream to an Order entity (convert it)
+                        .map(ModelConverter::toOrderEntity) // map each OrderDTO element from the above stream to an Order entity (convert it)
                         .toList()) // collect the stream to a new list - will be a list of Order entities because of the previous map
                 .orElse(Collections.emptyList()); // if the Optional is empty ('orderDTOs' list is null), return an empty list
 
