@@ -1,6 +1,7 @@
 package com.itschool.springapp.service.impl;
 
 import com.itschool.springapp.entity.User;
+import com.itschool.springapp.exception.UserNotFoundException;
 import com.itschool.springapp.model.UserDTO;
 import com.itschool.springapp.repository.UserRepository;
 import com.itschool.springapp.service.UserService;
@@ -21,7 +22,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDTO getUser(long id) {
         User foundUserEntity = userRepository.findById(id) // find the User entity by its ID in the database
-                .orElseThrow(); // if not found, throw an error
+                .orElseThrow(() -> new UserNotFoundException("User " + id + " not found in db!")); // if not found, throw a custom exception
 
         return ModelConverter.toUserDTO(foundUserEntity); // convert the User entity to UserDTO and return it
     }

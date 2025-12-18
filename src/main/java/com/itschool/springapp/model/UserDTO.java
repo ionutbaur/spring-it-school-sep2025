@@ -1,6 +1,7 @@
 package com.itschool.springapp.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.itschool.springapp.exception.InvalidInputException;
 
 import java.util.List;
 
@@ -14,4 +15,13 @@ public record UserDTO(@JsonProperty(access = JsonProperty.Access.READ_ONLY) // t
                       AddressDTO address,
                       @JsonProperty(access = JsonProperty.Access.READ_ONLY) // read-only - don't provide it on request when creating/updating a new UserDTO object
                       List<OrderDTO> orders) {
+
+    @Override
+    public Integer age() {
+        if (age < 0) {
+            throw new InvalidInputException("Age cannot be negative!");
+        }
+
+        return age;
+    }
 }

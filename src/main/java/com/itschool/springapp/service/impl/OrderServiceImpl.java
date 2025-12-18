@@ -2,6 +2,7 @@ package com.itschool.springapp.service.impl;
 
 import com.itschool.springapp.entity.Order;
 import com.itschool.springapp.entity.User;
+import com.itschool.springapp.exception.UserNotFoundException;
 import com.itschool.springapp.model.OrderDTO;
 import com.itschool.springapp.repository.OrderRepository;
 import com.itschool.springapp.repository.UserRepository;
@@ -34,7 +35,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderDTO placeOrder(long userId, OrderDTO orderDTO) {
         User user = userRepository.findById(userId)
-                .orElseThrow();
+                .orElseThrow(() -> new UserNotFoundException("User " + userId + " not found in db!"));
         Order order = new Order(orderDTO.description(), user);
         Order createdOrder = orderRepository.save(order);
 
