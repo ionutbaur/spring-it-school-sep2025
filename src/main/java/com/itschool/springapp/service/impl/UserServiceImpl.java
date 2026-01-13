@@ -1,17 +1,27 @@
 package com.itschool.springapp.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itschool.springapp.entity.User;
 import com.itschool.springapp.exception.UserNotFoundException;
 import com.itschool.springapp.model.UserDTO;
 import com.itschool.springapp.repository.UserRepository;
 import com.itschool.springapp.service.UserService;
 import com.itschool.springapp.utils.ModelConverter;
+import com.itschool.springapp.utils.ObjectMapperSingleton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.concurrent.*;
 
 @Service // Annotation to tell Spring that this is a bean of type Service (usually contains business logic)
 public class UserServiceImpl implements UserService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserServiceImpl.class);
 
     private final UserRepository userRepository;
 
@@ -29,11 +39,33 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<UserDTO> getAllUsers() {
-        List<User> allUserEntities = userRepository.findAll(); // retrieve all User entities from the database
+        // move the blocking database call to a virtual thread to avoid blocking the main thread
+        try (ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+            // define a Callable task to retrieve all users from the database
+            Callable<List<UserDTO>> task = () -> {
+                LOGGER.info("Accessing DB userRepository.findAll() on thread {}", Thread.currentThread());
+                List<User> allUserEntities = userRepository.findAll(); // retrieve all User entities from the database
 
-        return allUserEntities.stream()
-                .map(ModelConverter::toUserDTO)
-                .toList(); // convert each User entity to UserDTO and collect them into a list
+                return allUserEntities.stream()
+                        .map(ModelConverter::toUserDTO)
+                        .toList(); // convert each User entity to UserDTO and collect them into a list
+            };
+
+            // submit the task on the virtual thread executor service
+            Future<List<UserDTO>> futureList = executorService.submit(task);
+
+            // wait for the task to complete and get the result
+            List<UserDTO> allUsers = futureList.get();
+            logSerializedObj(allUsers); // optional, demonstrates the use of ObjectMapper to serialize the list to JSON and log it
+
+            return allUsers;
+        } catch (ExecutionException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error occurred while executing the task that retrieves all users", e);
+        } catch (InterruptedException e) {
+            // interrupt the current thread if it gets stuck
+            Thread.currentThread().interrupt();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "InterruptedException occurred in current thread", e);
+        }
     }
 
     @Override
@@ -60,6 +92,18 @@ public class UserServiceImpl implements UserService {
     @Override
     public void deleteUser(long id) {
         userRepository.deleteById(id); // delete the User entity with the specified ID from the database
+    }
+
+    // a generic method to serialize any object to JSON and log it (for demo purposes)
+    private <T> void logSerializedObj(T obj) {
+        ObjectMapper objectMapper = ObjectMapperSingleton.getInstance(); // obtain the ObjectMapper unique instance
+        try {
+            // serialize the object to JSON string
+            String json = objectMapper.writeValueAsString(obj);
+            LOGGER.info("Serialized type to JSON: {}", json);
+        } catch (JsonProcessingException e) {
+            LOGGER.error("Error serializing type to JSON", e);
+        }
     }
 
 }

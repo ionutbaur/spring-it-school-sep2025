@@ -33,6 +33,7 @@ public class UserController {
     @Operation(summary = "Find all users", description = "Find all users in the database and return them in a list")
     @GetMapping
     public List<UserDTO> findAllUsers() {
+        // System.out.println("======== Request started on thread " + Thread.currentThread());
         return userService.getAllUsers();
     }
 

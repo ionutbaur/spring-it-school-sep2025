@@ -21,7 +21,7 @@ public class User {
     private Address address;
 
     // mappedBy is used to specify the field name in the Order class that owns the relationship in the "orders" table
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER) // eagerly fetch the orders in order for async operations (like Future) to work properly
     private List<Order> orders;
 
     @Transient // marks the field as transient (non-serializable), meaning it will NOT be persisted in the database (can be used for various business logic, etc.). Usually not needed. Also, not needed in our case, put here only for demo purposes
